@@ -112,7 +112,7 @@ void loop() {
       screen.printLineInfo(statusWifi, iscreen, ti_start, ti_end);      
       }
     }
-
+  //Комментарий
   switch(iscreen){
     case MAIN_SCREEN: 
       showMainScreen();
