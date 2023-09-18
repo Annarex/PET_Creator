@@ -56,7 +56,7 @@ class Scr{
     oled.setScale(1);
     oled.setCursor(40,3);
     oled.println(getTextReason(reason));
-    }
+    };
   String getTextReason(int reason){
     switch (reason) { 
       case OVERHEAT:
@@ -67,7 +67,7 @@ class Scr{
         break;
       }
       return "";
-    }
+    };
   void printTemps(float target_temp, float cur_temp){
     oled.setScale(1); 
     oled.setCursor(2,0);
@@ -87,7 +87,7 @@ class Scr{
     oled.invertText(false);
     oled.setCursor(105,0 );
     printSymbol(degreeSymbol);
-    }
+    };
 
   void printHeaterStatus(boolean status) {
     oled.setCursor(117, 0);
@@ -95,36 +95,36 @@ class Scr{
       printSymbol(symbolPlay);
     else
       printSymbol(symbolPause);
-    }
+    };
 
   void printGearStatus(boolean status) {
     oled.setCursor(117, 1);
     printSymbol(status?symbolPlay:symbolPause);
-    }
+    };
   void printWorkStatus(boolean status) {
     oled.setCursor(117, 2);
     printSymbol(status?symbolChecked:symbolUnChecked);
-    }
+    };
    
   void printLineBar(int i_screen) {
     for(int i=0;i<3;i++){
       oled.setCursor(30+(i*10),3);
       printSymbol(i==i_screen?symbolActive:symbolNoActive);
       }
-    }
+    };
   void printTimeWork(int ti_start, int ti_end) {
       oled.setCursor(80,3);
       oled.println(getFormatedTimeWork(ti_start, ti_end));
-    }
+    };
   void printLineInfo(boolean statusWifi, BAR_SCREENS iscreen, int ti_start, int ti_end){
       printConnectedStatus(statusWifi);
       printLineBar(iscreen);
       printTimeWork(ti_start, ti_end);
-    } 
+    };
   void printConnectedStatus(boolean status) {
     oled.setCursor(0, 3);
     printSymbol(status?symbolConnected:symbolNotConnected);
-    }
+    };
 
   void printSpeed(float s){
     // s -speed in mm/s * 10, print in mm/s
@@ -139,7 +139,7 @@ class Scr{
     oled.invertText(false);
     oled.setCursor(80,1);
     oled.print("mm/s");
-    }
+    };
 
   void printMilage(float m, float fm){
     // m - current stepper position in degree, output to display in meters
@@ -157,15 +157,14 @@ class Scr{
     oled.print(str);
     oled.invertText(false); 
     oled.print(") m");  
-    }
+    };
 
-  
   String getFormatedTimeWork(int ti_start, int ti_end){
-  uint32_t sec = (ti_end-ti_start)/ 1000ul;
-  char str[10];
-  sprintf(str, "%02d:%02d:%02d",  (sec / 3600ul), ((sec % 3600ul) / 60ul), ((sec % 3600ul) % 60ul));
-  return String(str);
-  }
+    uint32_t sec = (ti_end-ti_start)/ 1000ul;
+    char str[10];
+    sprintf(str, "%02d:%02d:%02d",  (sec / 3600ul), ((sec % 3600ul) / 60ul), ((sec % 3600ul) % 60ul));
+    return String(str);
+    };
   unsigned char degreeSymbol[7] = {0x02, 0x05, 0x02, 0x38, 0x44, 0x44, 0x28}; 
   unsigned char symbolPlay[7] = {0x7f, 0x7f, 0x3e, 0x3e, 0x1c, 0x1c, 0x08}; 
   unsigned char symbolPause[7] = {0x00, 0x7f, 0x7f, 0x00, 0x7f, 0x7f, 0x00}; 
