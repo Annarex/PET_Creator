@@ -83,8 +83,11 @@ void setup() {
   screen.DrawStartScreen();
   fullLenght = getFullMilageFromPref();
   screen.DrawMainScreen(fullLenght);
+  
+  screen.printLineInfo(statusWifi, iscreen, ti_start, ti_end);
   statusWifi = connectWiFi();
   screen.printLineInfo(statusWifi, iscreen, ti_start, ti_end);
+
   bot.setChatID(CHAT_ID);
   bot.attach(havingNewMsgInTelegram);
   bot.skipUpdates();
@@ -215,6 +218,7 @@ void handleMainScreen(){
         }
     }
 }
+
 void showMainScreen(){
  if (runMotor) {
     screen.printMilage(stepper.getCurrentDeg(), fullLenght);
@@ -235,7 +239,9 @@ void showMainScreen(){
       screen.printWorkStatus(statusFinishWork);
       ti_end = millis();
       }
-    }
+  //вырезано из функции переключения нагрева
+  screen.printHeaterStatus(Heat);
+
 }
 
 void handleSettingScreen(){
@@ -254,7 +260,8 @@ void showHistoryScreen(){
 void havingNewMsgInTelegram(FB_msg& msg) {
   last_msg = msg.text;
   if (msg.text == "/menu") {
-    bot.showMenu("Показать данные \t Обновить \t Удалить");Serial.println(msg.chatID);
+    bot.showMenu("Показать данные \t Обновить \t Удалить");
+    Serial.println(msg.chatID);
     }
   else if (msg.text == "/stats") {
     bot.sendMessage(getStats());
@@ -275,8 +282,6 @@ void havingNewMsgInTelegram(FB_msg& msg) {
 void changeHeatingState(){
   cmode = CHANGE_TEMPERATURE;
   Heat = ! Heat;
-  //добавить проверку экрана
-  screen.printHeaterStatus(Heat);
   String mes ="Нагрев ";
   mes += Heat?"включен! \xF0\x9F\x9F\xA2":"выключен! \xF0\x9F\x94\xB4";
   bot.sendMessage(mes);
