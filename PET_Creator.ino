@@ -55,6 +55,7 @@ void tickEncoder(){
 
 void encRotationToValue (float* value, float inc, float minValue, float maxValue);
 
+
 void setup() {
   Serial.begin(115200);
   pinMode(CFG_ENDSTOP_PIN, INPUT_PULLUP);
@@ -83,7 +84,7 @@ void setup() {
   screen.DrawStartScreen();
   fullLenght = getFullMilageFromPref();
   screen.DrawMainScreen(fullLenght);
-  
+
   screen.printLineInfo(statusWifi, iscreen, ti_start, ti_end);
   statusWifi = connectWiFi();
   screen.printLineInfo(statusWifi, iscreen, ti_start, ti_end);
@@ -122,12 +123,12 @@ void loop() {
       handleMainScreen();
       break;
     case SECOND_SCREEN:
-      showSettingScreen(); 
-      handleSettingScreen();
+      // showSettingScreen(); 
+      // handleSettingScreen();
       break;
     case THIRD_SCREEN: 
-      showHistoryScreen();
-      handleHistoryScreen();
+      // showHistoryScreen();
+      // handleHistoryScreen();
       break;
     }
   mainProccess();    
@@ -163,7 +164,7 @@ void mainProccess(){
         Heat = false;
         statusFinishWork = true; 
         ti_end = millis();
-        bot.sendMessage("Статус протяжки: \xE2\x9C\x85Выполнена ");
+        bot.sendMessage("Статус протяжки: \xE2\x9C\x85Выполнена\n"+getResultStats());
         saveFullMilageToPref();
         beepI();
         beepI();
@@ -187,7 +188,7 @@ void handleMainScreen(){
   screen.printTemps(targetTemp, curTemp);
   if (!isInteractive()) {
       cmode = CHANGE_NO;
-  }
+    }
   if( cmode == CHANGE_TEMPERATURE) {
       encRotationToValue(&newTargetTemp, 1, CFG_TEMP_MIN, CFG_TEMP_MAX - 10);
       if (enc.isHolded()) changeHeatingState();
@@ -220,10 +221,10 @@ void handleMainScreen(){
 }
 
 void showMainScreen(){
- if (runMotor) {
+  if (runMotor) {
     screen.printMilage(stepper.getCurrentDeg(), fullLenght);
     screen.printTimeWork(ti_start, ti_end = millis());
-  }
+    }
   curTemp = therm.getTempDenoised();
   if (curTemp != prevTemp) {
       screen.printTemps(targetTemp, curTemp);
@@ -239,23 +240,15 @@ void showMainScreen(){
       screen.printWorkStatus(statusFinishWork);
       ti_end = millis();
       }
+    }
   //вырезано из функции переключения нагрева
   screen.printHeaterStatus(Heat);
-
 }
 
-void handleSettingScreen(){
-  
-}
-void showSettingScreen(){
-
-}
-void handleHistoryScreen(){
-  
-}
-void showHistoryScreen(){
-
-}
+void handleSettingScreen(){}
+void showSettingScreen(){}
+void handleHistoryScreen(){}
+void showHistoryScreen(){}
 
 void havingNewMsgInTelegram(FB_msg& msg) {
   last_msg = msg.text;
@@ -264,7 +257,9 @@ void havingNewMsgInTelegram(FB_msg& msg) {
     Serial.println(msg.chatID);
     }
   else if (msg.text == "/stats") {
-    bot.sendMessage(getStats());
+    String str = "Основные параметры станка:\n";
+    str += getStats();
+    bot.sendMessage(str);
     }
   else if (msg.text == "/heating") {
     changeHeatingState();
@@ -278,7 +273,6 @@ void havingNewMsgInTelegram(FB_msg& msg) {
     }
   else  { Serial.println(msg.text);}
   }
-
 void changeHeatingState(){
   cmode = CHANGE_TEMPERATURE;
   Heat = ! Heat;
@@ -308,11 +302,17 @@ void changeStepingState(){
 
 String getStats(){
     String str = "";
-    str += "Основные параметры станка:\n";
     str += "\xE2\x8C\x9A Время выполнения: "+screen.getFormatedTimeWork(ti_start, ti_end)+"\n";
     str += "\xF0\x9F\x8C\xA1 Температура: "+String(curTemp)+"\n";
     str += "\xF0\x9F\x9A\x80 Скорость: "+String(((float)SpeedX10/SPEED_MAX))+"\n";
     str += "\xF0\x9F\x93\x8F Метраж: "+String(getMilage());
+    return str;
+  }
+
+String getResultStats(){
+    String str = "";
+    str += "\xE2\x8C\x9A Время выполнения протяжки: "+screen.getFormatedTimeWork(ti_start, ti_end)+"\n";
+    str += "\xF0\x9F\x93\x8F Протянуто метров: - за цикл("+String(getMilage())+") - всего("+getFullMilageFromPref()+")\n";
     return str;
   }
 
