@@ -2,6 +2,7 @@
 #define _Screen_h
 
 #include "libs/GyverOLED.h"
+#include "tools.h"
 #include "cfg.h"
 /* Статусы интерактивности*/
 enum CHANGE_MODE {CHANGE_NO, CHANGE_TEMPERATURE, CHANGE_SPEED, CHANGE_HIST_LENGHT};
@@ -9,6 +10,8 @@ enum BAR_SCREENS {MAIN_SCREEN, SECOND_SCREEN, THIRD_SCREEN};
 enum ERRORS {OVERHEAT=1, THERMISTOR_ERROR=2};
 
 MyNTC therm1(CFG_TERM_PIN, CFG_TERM_VALUE, CFG_TERM_B_COEFF, CFG_TERM_SERIAL_R);
+
+
 
 class Scr{
   private:
@@ -159,12 +162,7 @@ class Scr{
     oled.print(") m");  
     };
 
-  String getFormatedTimeWork(int ti_start, int ti_end){
-    uint32_t sec = (ti_end-ti_start)/ 1000ul;
-    char str[10];
-    sprintf(str, "%02d:%02d:%02d",  (sec / 3600ul), ((sec % 3600ul) / 60ul), ((sec % 3600ul) % 60ul));
-    return String(str);
-    };
+
   unsigned char degreeSymbol[7] = {0x02, 0x05, 0x02, 0x38, 0x44, 0x44, 0x28}; 
   unsigned char symbolPlay[7] = {0x7f, 0x7f, 0x3e, 0x3e, 0x1c, 0x1c, 0x08}; 
   unsigned char symbolPause[7] = {0x00, 0x7f, 0x7f, 0x00, 0x7f, 0x7f, 0x00}; 

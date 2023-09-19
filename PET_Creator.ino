@@ -7,6 +7,7 @@
 #include "libs/GyverStepper.h"
 #include "MyNTC.h"
 #include "beeps.h"
+#include "tools.h"
 #include "scr.h"
 #include <Preferences.h>
 
@@ -33,7 +34,7 @@ MyNTC therm(CFG_TERM_PIN, CFG_TERM_VALUE, CFG_TERM_B_COEFF, CFG_TERM_SERIAL_R);
 GyverPID regulator(CFG_PID_P, CFG_PID_I, CFG_PID_D, 200);
 
 String last_msg = "";
-bool Heat = false, runMotor=false, statusFinishWork = false, statusGear = false,  statusWifi = false;
+bool Heat = false, runMotor=false, statusFinishWork = false, statusGear = false,  statusWifi = false, minimalMsgTG = true;
 unsigned long interactive = millis(), prevMillisTime = 0;
 float targetTemp = CFG_TEMP_INIT, prePrevTemp = 0,
  prevTemp = 0, curTemp = 1, newTargetTemp = 0,
@@ -92,7 +93,7 @@ void setup() {
   bot.setChatID(CHAT_ID);
   bot.attach(havingNewMsgInTelegram);
   bot.skipUpdates();
-  bot.sendMessage("Станок запущен!");
+  if(!minimalMsgTG) bot.sendMessage("Станок запущен!");
   regulator.setpoint = targetTemp; 
   t_encoder.attach_ms(20, tickEncoder);     
   }
@@ -173,7 +174,6 @@ void mainProccess(){
   else statusFinishWork = false; 
 }
 
-
 //Функция для работы на главном экране
 void handleMainScreen(){
   newTargetTemp = targetTemp;
@@ -189,9 +189,9 @@ void handleMainScreen(){
   if (!isInteractive()) {
       cmode = CHANGE_NO;
     }
-  if( cmode == CHANGE_TEMPERATURE) {
+  if(cmode == CHANGE_TEMPERATURE) {
       encRotationToValue(&newTargetTemp, 1, CFG_TEMP_MIN, CFG_TEMP_MAX - 10);
-      if (enc.isHolded()) changeHeatingState();
+      if (enc.isHolded()) changeHeatingState(false);
       if (newTargetTemp != targetTemp) {
         targetTemp = newTargetTemp;
         regulator.setpoint = newTargetTemp;
@@ -200,7 +200,7 @@ void handleMainScreen(){
     } else 
   if (cmode == CHANGE_SPEED) {
       encRotationToValue(&newSpeedX10, 1, 0, SPEED_MAX * 10);
-      if (enc.isHolded()) changeStepingState();
+      if (enc.isHolded()) changeStepingState(false);
       if (newSpeedX10 != SpeedX10) {
         SpeedX10 = newSpeedX10;
         if (runMotor) motorCTL(newSpeedX10);        // в градусах/сек
@@ -262,10 +262,10 @@ void havingNewMsgInTelegram(FB_msg& msg) {
     bot.sendMessage(str);
     }
   else if (msg.text == "/heating") {
-    changeHeatingState();
+    changeHeatingState(true);
     }
   else if (msg.text == "/steping") {
-    changeStepingState();
+    changeStepingState(true);
     }
   else  if (msg.text == "/reboot") {
     bot.sendMessage("Перезагрузка...");
@@ -273,15 +273,17 @@ void havingNewMsgInTelegram(FB_msg& msg) {
     }
   else  { Serial.println(msg.text);}
   }
-void changeHeatingState(){
+void changeHeatingState(bool withReturnStateMsg){
   cmode = CHANGE_TEMPERATURE;
   Heat = ! Heat;
-  String mes ="Нагрев ";
-  mes += Heat?"включен! \xF0\x9F\x9F\xA2":"выключен! \xF0\x9F\x94\xB4";
-  bot.sendMessage(mes);
+  if(withReturnStateMsg){
+    String mes ="Нагрев ";
+    mes += Heat?"включен! \xF0\x9F\x9F\xA2":"выключен! \xF0\x9F\x94\xB4";
+    bot.sendMessage(mes); 
+  } 
   } 
 
-void changeStepingState(){
+void changeStepingState(bool withReturnStateMsg){
   cmode == CHANGE_SPEED;
   runMotor = ! runMotor;
   if (runMotor) {
@@ -294,15 +296,17 @@ void changeStepingState(){
     motorCTL(-1);
     runMotor = false;
   }
-  String mes ="Двигатель ";
-  mes += runMotor?"включен! \xF0\x9F\x9F\xA2":"выключен! \xF0\x9F\x94\xB4";
-  bot.sendMessage(mes);
+  if(withReturnStateMsg){
+    String mes ="Двигатель ";
+    mes += runMotor?"включен! \xF0\x9F\x9F\xA2":"выключен! \xF0\x9F\x94\xB4";
+    bot.sendMessage(mes);
+  }
   interactiveSet();
   } 
 
 String getStats(){
     String str = "";
-    str += "\xE2\x8C\x9A Время выполнения: "+screen.getFormatedTimeWork(ti_start, ti_end)+"\n";
+    str += "\xE2\x8C\x9A Время выполнения: "+getFormatedTimeWork(ti_start, ti_end)+"\n";
     str += "\xF0\x9F\x8C\xA1 Температура: "+String(curTemp)+"\n";
     str += "\xF0\x9F\x9A\x80 Скорость: "+String(((float)SpeedX10/SPEED_MAX))+"\n";
     str += "\xF0\x9F\x93\x8F Метраж: "+String(getMilage());
@@ -311,7 +315,7 @@ String getStats(){
 
 String getResultStats(){
     String str = "";
-    str += "\xE2\x8C\x9A Время выполнения протяжки: "+screen.getFormatedTimeWork(ti_start, ti_end)+"\n";
+    str += "\xE2\x8C\x9A Время выполнения протяжки: "+getFormatedTimeWork(ti_start, ti_end)+"\n";
     str += "\xF0\x9F\x93\x8F Протянуто метров: - за цикл("+String(getMilage())+") - всего("+getFullMilageFromPref()+")\n";
     return str;
   }
@@ -342,7 +346,7 @@ void emStop(int reason) {
   screen.printScreenError(reason);
   String err = "\xF0\x9F\x86\x98 Ошибка: \n";
   err += screen.getTextReason(reason) + "\n";
-  err += "\xE2\x8C\x9A Время прерывания: "+screen.getFormatedTimeWork(ti_start, ti_end)+"\n";
+  err += "\xE2\x8C\x9A Время прерывания: "+getFormatedTimeWork(ti_start, ti_end)+"\n";
   err += "\xF0\x9F\x93\x8F Текущий Метраж: "+String(getMilage());
   bot.sendMessage(err);
   saveFullMilageToPref();
@@ -428,7 +432,6 @@ float getMilage() {
   }
 
 long mmStoDeg(float mmS) {
-  Serial.println("Step");
   return mmS / (REDCONST * 1000);
   }
 
