@@ -118,21 +118,21 @@ void loop() {
     screen_changed = (liscreen != iscreen);
     if(screen_changed){
       oled.clear();
-      screen.printLineInfo(statusWifi, iscreen, ti_start, ti_end);     
+      screen.printLineInfo(statusWifi, iscreen, ti_start, ti_end);      
       }
     }
   //Комментарий
   switch(iscreen){
     case MAIN_SCREEN: 
-      if(timScreenUpdate.ready() || screen_changed) showMainScreen(screen_changed);
+      if(timScreenUpdate.ready()) showMainScreen(screen_changed);
       handleMainScreen();
       break;
     case SECOND_SCREEN:
-      if(timScreenUpdate.ready() || screen_changed) showSettingScreen(screen_changed); 
+      if(timScreenUpdate.ready()) showSettingScreen(screen_changed); 
       handleSettingScreen();
       break;
     case THIRD_SCREEN: 
-      if(timScreenUpdate.ready() || screen_changed) showHistoryScreen(screen_changed);
+      if(timScreenUpdate.ready()) showHistoryScreen(screen_changed);
       handleHistoryScreen();
       break;
     }
@@ -224,7 +224,6 @@ void handleMainScreen(){
 
 void showMainScreen(bool screen_changed){
   if (screen_changed){screen.printTemps(targetTemp, curTemp);   }
-  
   screen.printMilage(stepper.getCurrentDeg(), fullLenght);
   screen.printSpeed(SpeedX10); // to clear selection
   if (runMotor) {
