@@ -8,6 +8,7 @@
 #include "MyNTC.h"
 #include "beeps.h"
 #include "tools.h"
+#include "timer.h"
 #include "scr.h"
 #include <Preferences.h>
 
@@ -34,7 +35,7 @@ MyNTC therm(CFG_TERM_PIN, CFG_TERM_VALUE, CFG_TERM_B_COEFF, CFG_TERM_SERIAL_R);
 GyverPID regulator(CFG_PID_P, CFG_PID_I, CFG_PID_D, 200);
 
 String last_msg = "";
-bool Heat = false, runMotor=false, statusFinishWork = false, statusGear = false,  statusWifi = false, minimalMsgTG = true;
+bool Heat = false, runMotor=false, statusFinishWork = false, statusGear = false,  statusWifi = false, minimalMsgTG = true, screen_changed = true;
 unsigned long interactive = millis(), prevMillisTime = 0;
 float targetTemp = CFG_TEMP_INIT, prePrevTemp = 0,
  prevTemp = 0, curTemp = 1, newTargetTemp = 0,
@@ -43,6 +44,8 @@ Ticker t_stepper, t_encoder, t_telegrambot;
 int value = 0, ti_start=0, ti_end=0;
 CHANGE_MODE cmode = CHANGE_NO;
 BAR_SCREENS iscreen = MAIN_SCREEN, liscreen = SECOND_SCREEN;
+
+Timer timScreenUpdate;
 
 Scr screen("1.0", cmode, targetTemp, prePrevTemp, prevTemp, curTemp, SpeedX10, REDCONST);
 
@@ -56,9 +59,9 @@ void tickEncoder(){
 
 void encRotationToValue (float* value, float inc, float minValue, float maxValue);
 
-
 void setup() {
   Serial.begin(115200);
+  timScreenUpdate.start(200);
   pinMode(CFG_ENDSTOP_PIN, INPUT_PULLUP);
   pinMode(CFG_SOUND_PIN, OUTPUT);
   enc.pullUp();
@@ -112,24 +115,25 @@ void loop() {
       iscreen = BAR_SCREENS((iscreen < THIRD_SCREEN)?(iscreen+1):MAIN_SCREEN);
       screen.printLineBar(iscreen);
       }
-    if(liscreen != iscreen){
+    screen_changed = (liscreen != iscreen);
+    if(screen_changed){
       oled.clear();
-      screen.printLineInfo(statusWifi, iscreen, ti_start, ti_end);      
+      screen.printLineInfo(statusWifi, iscreen, ti_start, ti_end);     
       }
     }
   //Комментарий
   switch(iscreen){
     case MAIN_SCREEN: 
-      showMainScreen();
+      if(timScreenUpdate.ready() || screen_changed) showMainScreen(screen_changed);
       handleMainScreen();
       break;
     case SECOND_SCREEN:
-      // showSettingScreen(); 
-      // handleSettingScreen();
+      if(timScreenUpdate.ready() || screen_changed) showSettingScreen(screen_changed); 
+      handleSettingScreen();
       break;
     case THIRD_SCREEN: 
-      // showHistoryScreen();
-      // handleHistoryScreen();
+      if(timScreenUpdate.ready() || screen_changed) showHistoryScreen(screen_changed);
+      handleHistoryScreen();
       break;
     }
   mainProccess();    
@@ -165,7 +169,7 @@ void mainProccess(){
         Heat = false;
         statusFinishWork = true; 
         ti_end = millis();
-        bot.sendMessage("Статус протяжки: \xE2\x9C\x85Выполнена\n"+getResultStats());
+        bot.sendMessage("Статус протяжки: \xE2\x9C\x85Выполнена\n\n"+getResultStats());
         saveFullMilageToPref();
         beepI();
         beepI();
@@ -182,10 +186,8 @@ void handleMainScreen(){
     newfullLenght = fullLenght;
     cmode = CHANGE_MODE((cmode < CHANGE_HIST_LENGHT)? cmode+1 : 0);
     interactiveSet();
-    screen.printMilage(stepper.getCurrentDeg(), fullLenght);
+    
     }
-  screen.printSpeed(SpeedX10); // to clear selection
-  screen.printTemps(targetTemp, curTemp);
   if (!isInteractive()) {
       cmode = CHANGE_NO;
     }
@@ -220,12 +222,17 @@ void handleMainScreen(){
     }
 }
 
-void showMainScreen(){
+void showMainScreen(bool screen_changed){
+  if (screen_changed){screen.printTemps(targetTemp, curTemp);   }
+  
+  screen.printMilage(stepper.getCurrentDeg(), fullLenght);
+  screen.printSpeed(SpeedX10); // to clear selection
   if (runMotor) {
     screen.printMilage(stepper.getCurrentDeg(), fullLenght);
-    screen.printTimeWork(ti_start, ti_end = millis());
+    screen.printTimeWork(ti_start, ti_end);
     }
   curTemp = therm.getTempDenoised();
+  
   if (curTemp != prevTemp) {
       screen.printTemps(targetTemp, curTemp);
     }
@@ -233,12 +240,8 @@ void showMainScreen(){
     if(!runMotor) {
       screen.printGearStatus(statusGear);
       } else {
-      runMotor = false;
-      motorCTL(-1);
-      Heat = false;
       screen.printHeaterStatus(Heat);
       screen.printWorkStatus(statusFinishWork);
-      ti_end = millis();
       }
     }
   //вырезано из функции переключения нагрева
@@ -246,9 +249,9 @@ void showMainScreen(){
 }
 
 void handleSettingScreen(){}
-void showSettingScreen(){}
+void showSettingScreen(bool screen_changed){}
 void handleHistoryScreen(){}
-void showHistoryScreen(){}
+void showHistoryScreen(bool screen_changed){}
 
 void havingNewMsgInTelegram(FB_msg& msg) {
   last_msg = msg.text;
