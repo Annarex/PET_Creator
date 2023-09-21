@@ -6,7 +6,7 @@
 #include "cfg.h"
 /* Статусы интерактивности*/
 enum CHANGE_MODE {CHANGE_NO, CHANGE_TEMPERATURE, CHANGE_SPEED, CHANGE_HIST_LENGHT};
-enum BAR_SCREENS {MAIN_SCREEN, SECOND_SCREEN, THIRD_SCREEN};
+enum BAR_SCREENS {SECOND_SCREEN, MAIN_SCREEN, THIRD_SCREEN};
 enum ERRORS {OVERHEAT=1, THERMISTOR_ERROR=2};
 
 MyNTC therm1(CFG_TERM_PIN, CFG_TERM_VALUE, CFG_TERM_B_COEFF, CFG_TERM_SERIAL_R);
@@ -71,25 +71,32 @@ class Scr{
       }
       return "";
     };
-  void printTemps(float target_temp, float cur_temp){
-    oled.setScale(1); 
+
+
+  void printCurTemp(float cur_temp){
     oled.setCursor(2,0);
     oled.print("Температ");
     oled.setCursor(55,0 );
-    if((int)*curTemp != (int)*prePrevTemp){
-      oled.print("   ");
-      oled.setCursor(55,0 );
-      if(cur_temp>20)oled.print((int)cur_temp, 1); 
-      else oled.print("000");
-    }
-    oled.setCursor(72,0 );
-    oled.println(" >");
+    // if((int)*curTemp != (int)*prePrevTemp){
+    oled.print("   ");
+    oled.setCursor(55,0 );
+    if(cur_temp>20)oled.print((int)cur_temp, 1); 
+    else oled.print("000");
+    //}
+  } 
+  void printTargetTemp(float target_temp){
     if(*whatToChange == CHANGE_TEMPERATURE)  oled.invertText(true);
     oled.setCursor(86, 0);
     oled.println((int)target_temp, 1);
     oled.invertText(false);
     oled.setCursor(105,0 );
     printSymbol(degreeSymbol);
+  } 
+  void printTemps(float target_temp, float cur_temp){
+    printCurTemp(cur_temp);
+    oled.setCursor(72,0 );
+    oled.println(" >");
+    printTargetTemp(target_temp);
     };
 
   void printHeaterStatus(boolean status) {

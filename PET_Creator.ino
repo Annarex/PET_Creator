@@ -124,15 +124,15 @@ void loop() {
   //Комментарий
   switch(iscreen){
     case MAIN_SCREEN: 
-      if(timScreenUpdate.ready()) showMainScreen(screen_changed);
+      if(timScreenUpdate.ready() || screen_changed) showMainScreen(screen_changed);
       handleMainScreen();
       break;
     case SECOND_SCREEN:
-      if(timScreenUpdate.ready()) showSettingScreen(screen_changed); 
+      if(timScreenUpdate.ready() || screen_changed) showSettingScreen(screen_changed); 
       handleSettingScreen();
       break;
     case THIRD_SCREEN: 
-      if(timScreenUpdate.ready()) showHistoryScreen(screen_changed);
+      if(timScreenUpdate.ready() || screen_changed) showHistoryScreen(screen_changed);
       handleHistoryScreen();
       break;
     }
